@@ -9,7 +9,7 @@ from app.core.security import get_password_hash
 # otherwise, SQL Alchemy might fail to initialize relationships properly
 # for more details: https://github.com/tiangolo/full-stack-fastapi-postgresql/issues/28
 from app.models.base import Base  # noqa: F401
-from app.models.tasks import Task_Status
+from app.models.tasks import Task_Priority, Task_Status
 from app.models.users import Users
 
 engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
@@ -18,6 +18,12 @@ task_status = {
     0: "未着手",
     1: "進行中",
     2: "完了",
+}
+
+task_priority = {
+    0: "低",
+    1: "中",
+    2: "高",
 }
 
 
@@ -45,6 +51,10 @@ def init_db(db_session: Session) -> None:
         for data in task_status.items():
             status = Task_Status(id=data[0], name=data[1], color="#FFFFFF")
             db_session.add(status)
+
+        for data in task_priority.items():
+            priority = Task_Priority(id=data[0], name=data[1], color="#FFFFFF")
+            db_session.add(priority)
 
         # コミットしてデータを保存
         db_session.commit()

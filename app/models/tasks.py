@@ -16,8 +16,10 @@ class Tasks(Base, CommonColumns):
     status_id = Column(Integer, ForeignKey("task_status.id"), nullable=False)
     tag_id = Column(Integer, ForeignKey("tags.id"), nullable=True)
     due_date = Column(DateTime, nullable=True)
+    priority_id = Column(Integer, ForeignKey("priority.id"), nullable=False)
 
     status = relationship("Task_Status", back_populates="tasks")
+    priority = relationship("Task_Priority", back_populates="tasks")
     tags = relationship("Task_Tags", back_populates="tasks")
 
 
@@ -38,6 +40,16 @@ class Task_Status(Base, CommonColumns):
     tasks = relationship("Tasks", back_populates="status")
 
 
+class Task_Priority(Base, CommonColumns):
+    __tablename__ = "priority"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True, nullable=False)
+    color = Column(String, default="#FFFFFF", nullable=False)
+
+    tasks = relationship("Tasks", back_populates="priority")
+
+
 class Task_Tags(Base, CommonColumns):
     __tablename__ = "tags"
 
@@ -46,3 +58,10 @@ class Task_Tags(Base, CommonColumns):
     color = Column(String, default="#FFFFFF", nullable=False)
 
     tasks = relationship("Tasks", back_populates="tags")
+
+
+class Tag_Assign(Base, CommonColumns):
+    __tablename__ = "tag_assign"
+
+    task_id = Column(Integer, ForeignKey("tasks.id"), primary_key=True)
+    tag_id = Column(Integer, ForeignKey("tags.id"), primary_key=True)
