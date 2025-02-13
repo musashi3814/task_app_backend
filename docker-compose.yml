@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:12
-    restart: always
+    restart: "no"
     ports:
       - "5432:5432"
     healthcheck:
@@ -43,7 +43,7 @@ services:
     image: "${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}"
     build:
       context: .
-    restart: always
+    restart: "no"
     networks:
       - default
     ports:
