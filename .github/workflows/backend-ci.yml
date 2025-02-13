@@ -1,0 +1,65 @@
+name: Backend CI
+
+defaults:
+  run:
+    working-directory: backend
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+  push:
+    paths:
+      - "backend/**"
+    branches-ignore:
+      - main
+
+jobs:
+  # test, docker buildなどは実施しない
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 black isort
+      
+      - name: Run isort
+        run: isort ./ --profile black --skip ./app/tests
+      
+      - name: Run black
+        run: black ./ --line-length 88 --exclude ./app/tests
+
+      - name: Run flake8
+        run: flake8 ./ --exclude ./app/tests --max-line-length=88 --ignore=E203,W503,W504 --max-complexity=15
+
+  type-check:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pydantic-settings sqlalchemy
+          pip install pydantic[mypy] sqlalchemy[mypy] mypy
+          pip install types-PyYAML
+      - name: Run mypy
+        run: mypy ./app/ --exclude ${GITHUB_WORKSPACE}/backend/app/gen.py --ignore-missing-imports --allow-redefinition --allow-untyped-globals --allow-untyped-decorators --check-untyped-defs --color-output --disallow-incomplete-defs --disallow-untyped-calls --disallow-untyped-defs --error-summary --implicit-reexport --namespace-packages --no-implicit-optional --show-column-numbers --show-error-codes --show-error-context --show-traceback --strict --warn-no-return --warn-redundant-casts --warn-return-any --warn-unreachable --warn-unused-configs --warn-unused-ignores
+        
