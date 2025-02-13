@@ -38,23 +38,40 @@ def init_db(db_session: Session) -> None:
         # テーブルが存在しない場合、create_all()を実行
         Base.metadata.create_all(bind=engine)
 
-        db_session.add(
-            Users(
-                name="first",
-                email=settings.FIRST_SUPERUSER,
-                hashed_password=get_password_hash(settings.FIRST_SUPERUSER_PASSWORD),
-                is_admin=True,
-                is_active=True,
+        if (
+            not db_session.query(Users)
+            .filter(Users.email == settings.FIRST_SUPERUSER)
+            .first()
+        ):
+            db_session.add(
+                Users(
+                    name="first",
+                    email=settings.FIRST_SUPERUSER,
+                    hashed_password=get_password_hash(
+                        settings.FIRST_SUPERUSER_PASSWORD
+                    ),
+                    is_admin=True,
+                    is_active=True,
+                )
             )
-        )
 
         for data in task_status.items():
-            status = Task_Status(id=data[0], name=data[1], color="#FFFFFF")
-            db_session.add(status)
+            if (
+                not db_session.query(Task_Status)
+                .filter(Task_Status.id == data[0])
+                .first()
+            ):
+                status = Task_Status(id=data[0], name=data[1], color="#FFFFFF")
+                db_session.add(status)
 
         for data in task_priority.items():
-            priority = Task_Priority(id=data[0], name=data[1], color="#FFFFFF")
-            db_session.add(priority)
+            if (
+                not db_session.query(Task_Priority)
+                .filter(Task_Priority.id == data[0])
+                .first()
+            ):
+                priority = Task_Priority(id=data[0], name=data[1], color="#FFFFFF")
+                db_session.add(priority)
 
         # コミットしてデータを保存
         db_session.commit()

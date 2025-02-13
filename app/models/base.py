@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Any
 
 from sqlalchemy import Column, DateTime, String, event, text
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import (
     DeclarativeBase,
     ORMExecuteState,
@@ -9,10 +10,7 @@ from sqlalchemy.orm import (
     with_loader_criteria,
 )
 
-
-class Base(DeclarativeBase):
-    id: Any
-    __tablename__: str
+Base = declarative_base()
 
 
 class CommonColumns:
