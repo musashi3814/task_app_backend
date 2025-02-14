@@ -1,4 +1,5 @@
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, text
+from sqlalchemy.orm import relationship
 
 from app.models.base_model import Base, CommonColumns
 
@@ -13,3 +14,5 @@ class Users(Base, CommonColumns):
     is_active = Column(Boolean, default=True, nullable=False)
     is_admin = Column(Boolean, default=False, nullable=False)
     last_login = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+    assign = relationship("Task_Assign", back_populates="user")

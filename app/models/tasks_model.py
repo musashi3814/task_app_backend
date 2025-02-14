@@ -18,6 +18,7 @@ class Tasks(Base, CommonColumns):
     due_date = Column(DateTime, nullable=True)
     priority_id = Column(Integer, ForeignKey("priority.id"), nullable=False)
 
+    assign = relationship("Task_Assign", back_populates="tasks")
     status = relationship("Task_Status", back_populates="tasks")
     priority = relationship("Task_Priority", back_populates="tasks")
     tags = relationship("Task_Tags", back_populates="tasks")
@@ -28,6 +29,9 @@ class Task_Assign(Base, CommonColumns):
 
     task_id = Column(Integer, ForeignKey("tasks.id"), primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+
+    tasks = relationship("Tasks", back_populates="assign")
+    user = relationship("Users", back_populates="assign")
 
 
 class Task_Status(Base, CommonColumns):
