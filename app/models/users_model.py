@@ -1,6 +1,6 @@
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, text
 
-from app.models.base import Base, CommonColumns
+from app.models.base_model import Base, CommonColumns
 
 
 class Users(Base, CommonColumns):

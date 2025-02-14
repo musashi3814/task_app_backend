@@ -4,7 +4,7 @@ from uuid import UUID
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
-from app.models.base import Base, CommonColumns
+from app.models.base_model import Base, CommonColumns
 
 
 class Tasks(Base, CommonColumns):

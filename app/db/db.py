@@ -8,9 +8,9 @@ from app.core.security import get_password_hash
 # make sure all SQL Alchemy models are imported before initializing DB
 # otherwise, SQL Alchemy might fail to initialize relationships properly
 # for more details: https://github.com/tiangolo/full-stack-fastapi-postgresql/issues/28
-from app.models.base import Base  # noqa: F401
-from app.models.tasks import Task_Priority, Task_Status
-from app.models.users import Users
+from app.models.base_model import Base  # noqa: F401
+from app.models.tasks_model import Task_Priority, Task_Status
+from app.models.users_model import Users
 
 engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
 

@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter
 
 from app.api.deps import SessionDep
-from app.models.tasks import Tasks
+from app.models.tasks_model import Tasks
 from app.schemas.task import InfoTask, SummaryTask, Task_Tag, TaskCreate, TaskUpdate
 
 router = APIRouter()
