@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from app.schemas.base_schema import BaseSchema
 from app.schemas.user import Abst_User
@@ -8,40 +8,37 @@ from app.schemas.user import Abst_User
 class SummaryTask(BaseSchema):
     id: int
     title: str
-    due_date: Optional[datetime]
+    due_date: Optional[datetime] = None
     status_id: int
     status: str
     priority_id: int
     priority: str
-    assigned: Optional[Abst_User]
 
 
 class InfoTask(SummaryTask):
-    description: Optional[str]
-    tag_id: Optional[int]
-    tag: Optional[str]
+    description: Optional[str] = None
+    assigned: Optional[List[int]] = None
     created_at: datetime
-    created_by: Abst_User
+    created_by: int
 
 
 class TaskCreate(BaseSchema):
     title: str
-    description: Optional[str]
-    due_date: Optional[datetime]
+    description: Optional[str] = None
+    due_date: Optional[datetime] = None
     status_id: int
     priority_id: int
-    tag_id: Optional[int]
-    assigned_id: Optional[int]
+    assigned_id: List[int]
 
 
 class TaskUpdate(BaseSchema):
-    title: Optional[str]
-    description: Optional[str]
-    due_date: Optional[datetime]
-    status_id: Optional[int]
-    priority_id: Optional[int]
-    tag_id: Optional[int]
-    assigned_id: Optional[int]
+    title: Optional[str] = None
+    description: Optional[str] = None
+    due_date: Optional[datetime] = None
+    status_id: Optional[int] = None
+    priority_id: Optional[int] = None
+    tag_id: Optional[int] = None
+    assigned_id: Optional[List[int]] = None
 
 
 class Task_Status(BaseSchema):
@@ -72,5 +69,5 @@ class Task_Tag_Create(BaseSchema):
 
 
 class Task_Tag_Update(BaseSchema):
-    name: Optional[str]
-    color: Optional[str]
+    name: Optional[str] = None
+    color: Optional[str] = None

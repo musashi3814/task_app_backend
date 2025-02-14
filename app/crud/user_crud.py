@@ -34,6 +34,7 @@ class CRUDUser:
         if users:
             assigned_tasks = (
                 db.query(Tasks)
+                .join(Task_Assign, Task_Assign.task_id == Tasks.id)
                 .options(joinedload(Tasks.assign))
                 .filter(Task_Assign.user_id == id)
                 .all()

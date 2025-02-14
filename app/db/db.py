@@ -12,7 +12,7 @@ from app.models.base_model import Base  # noqa: F401
 from app.models.tasks_model import Task_Priority, Task_Status
 from app.models.users_model import Users
 
-engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
+engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI), echo=True)
 
 task_status = {
     0: "未着手",

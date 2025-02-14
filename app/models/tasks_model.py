@@ -34,7 +34,7 @@ class Task_Assign(Base, CommonColumns):
     user = relationship("Users", back_populates="assign")
 
 
-class Task_Status(Base, CommonColumns):
+class Task_Status(Base):
     __tablename__ = "task_status"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -44,7 +44,7 @@ class Task_Status(Base, CommonColumns):
     tasks = relationship("Tasks", back_populates="status")
 
 
-class Task_Priority(Base, CommonColumns):
+class Task_Priority(Base):
     __tablename__ = "priority"
 
     id = Column(Integer, primary_key=True, index=True)
