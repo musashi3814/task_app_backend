@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:12
-    restart: "no"
+    restart: always
     ports:
       - "5432:5432"
     healthcheck:
@@ -55,6 +55,12 @@ services:
         condition: service_completed_successfully
     env_file:
       - .env
+    environment:
+      - POSTGRES_SERVER=db
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
     healthcheck:
       test:
         [
