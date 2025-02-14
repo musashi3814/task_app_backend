@@ -33,9 +33,9 @@ class SummaryUser(UserBase):
 
 class InfoUser(SummaryUser):
     count_wait: int
-    connt_work: int
+    count_work: int
     created_at: datetime
-    created_by: Abst_User
+    created_by: str
 
 
 class UserMe(BaseSchema):
@@ -45,7 +45,7 @@ class UserMe(BaseSchema):
     is_active: bool
     is_admin: bool
     created_at: datetime
-    created_by: Abst_User
+    created_by: str
     last_login: Optional[datetime] = None
 
 
@@ -53,8 +53,7 @@ class UserMe(BaseSchema):
 class UserCreate(BaseSchema):
     email: EmailStr
     password: str
-    full_name: str
-    department: str
+    name: str
     is_active: bool = True
     is_admin: bool = False
 

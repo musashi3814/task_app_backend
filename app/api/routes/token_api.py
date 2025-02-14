@@ -16,3 +16,13 @@ def login_access_token(session: SessionDep, form_data: RequestFormDep) -> Token:
 @router.post("/refresh", response_model=Token)
 def refresh_access_token(session: SessionDep, form_data: RequestFormDep) -> Token:
     return Token()
+
+
+@router.post("/signup", response_model=Token)
+def signup_access_token(session: SessionDep, form_data: RequestFormDep) -> Token:
+    return Token()
+
+
+@router.post("/logout")
+def logout(session: SessionDep) -> None:
+    return None

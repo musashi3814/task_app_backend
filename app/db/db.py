@@ -52,6 +52,7 @@ def init_db(db_session: Session) -> None:
                     ),
                     is_admin=True,
                     is_active=True,
+                    created_by="system",
                 )
             )
 
