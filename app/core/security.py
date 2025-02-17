@@ -13,39 +13,45 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 ALGORITHM = "HS256"
 
 
-def create_access_token(
-    subject: str | Any, user_type: str, expires_delta: timedelta
-) -> str:
-    """
-    アクセストークンを発行する
-    （自治体User,市民Userどちらも使用）
-    """
+def create_token(subject: int, role: str, expires_delta: timedelta) -> str:
     expire = datetime.now(timezone.utc) + expires_delta
-    to_encode = {"exp": expire, "user_id": str(subject), "user_type": user_type}
+    to_encode = {
+        "sub": subject,
+        "exp": expire,
+        "iat": datetime.now(timezone.utc),
+        "role": role,
+    }
     encoded_jwt: str = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 
-def create_id_token(user: Users, expires_delta: timedelta) -> str:
-    """
-    IDトークンを発行する
-    （自治体Userのみ使用,市民UserのIdTokenはLINEからfrontでもらう）
-    """
-    expire = datetime.now(timezone.utc) + expires_delta
+def create_access_token(subject: int, role: str) -> str:
+    return create_token(
+        subject, role, timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+
+
+def create_id_token(user: Users, role: str) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(
+        minutes=settings.ID_TOKEN_EXPIRE_MINUTES
+    )
     claims = {
-        "sub": str(user.id),  # ユーザーの一意識別子
+        "sub": user.id,
+        "user_id": str(user.id),
+        "exp": expire,
+        "iat": datetime.now(timezone.utc),
+        "name": user.name,
         "email": user.email,
-        "name": user.full_name,
-        "department": user.department,
-        "iat": datetime.now(timezone.utc),  # トークン発行時刻
-        "exp": expire,  # 有効期限
+        "role": role,
     }
-    if user.is_superuser:
-        claims["roles"] = ["admin"]
+    encoded_jwt: str = jwt.encode(claims, settings.SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
 
-    id_token: str = jwt.encode(claims, settings.SECRET_KEY, algorithm=ALGORITHM)
 
-    return id_token
+def create_refresh_token(subject: str | Any, role: str) -> str:
+    return create_token(
+        subject, role, timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    )
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:

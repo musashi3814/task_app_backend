@@ -1,28 +1,25 @@
 from datetime import datetime
+from typing import Optional
 
 from app.schemas.base_schema import BaseSchema
 
 
 class Token(BaseSchema):
-    id_token: str
+    id_token: Optional[str] = None
     access_token: str
-    refresh_token: str
+    refresh_token: Optional[str] = None
     token_type: str = "bearer"
 
 
 class AccessTokenPayload(BaseSchema):
-    sub: str
-    iss: str
-    aud: str
+    sub: int
     exp: datetime
     iat: datetime
     role: str
 
 
 class IdTokenPayload(BaseSchema):
-    sub: str
-    iss: str
-    aud: str
+    sub: int
     exp: datetime
     iat: datetime
     name: str
@@ -31,8 +28,6 @@ class IdTokenPayload(BaseSchema):
 
 
 class RefreshTokenPayload(BaseSchema):
-    sub: str
-    iss: str
-    aud: str
+    sub: int
     exp: datetime
     iat: datetime

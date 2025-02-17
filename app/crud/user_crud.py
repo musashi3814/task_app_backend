@@ -30,8 +30,8 @@ class CRUDUser:
         return db_obj
 
     def get(self, db: Session, id: int) -> Optional[InfoUser]:
-        users = db.query(Users).filter(Users.id == id).first()
-        if users:
+        user = db.query(Users).filter(Users.id == id).first()
+        if user:
             assigned_tasks = (
                 db.query(Tasks)
                 .join(Task_Assign, Task_Assign.task_id == Tasks.id)
@@ -43,7 +43,7 @@ class CRUDUser:
             count_work = len([task for task in assigned_tasks if task.status_id == 1])
 
             response = InfoUser(
-                count_wait=count_wait, count_work=count_work, **users.__dict__
+                count_wait=count_wait, count_work=count_work, **user.__dict__
             )
 
         return response

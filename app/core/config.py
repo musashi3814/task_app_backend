@@ -25,8 +25,10 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "task_app_backend"
     API_V1_STR: str = "/api/v1"
 
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 6
     ID_TOKEN_EXPIRE_MINUTES: int = 60
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 60 * 24 * 60
+    SECRET_KEY: str = secrets.token_urlsafe(32)
 
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_PORT: int = 5432
