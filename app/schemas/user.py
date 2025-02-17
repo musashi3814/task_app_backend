@@ -35,7 +35,7 @@ class InfoUser(SummaryUser):
     count_wait: int
     count_work: int
     created_at: datetime
-    created_by: str
+    created_by: Optional[int] = None
 
 
 class UserMe(BaseSchema):
@@ -45,15 +45,20 @@ class UserMe(BaseSchema):
     is_active: bool
     is_admin: bool
     created_at: datetime
-    created_by: str
+    created_by: Optional[int] = None
     last_login: Optional[datetime] = None
 
 
 # Properties to receive via API on creation
-class UserCreate(BaseSchema):
+
+
+class UserCreateMe(BaseSchema):
     email: EmailStr
     password: str
     name: str
+
+
+class UserCreate(UserCreateMe):
     is_active: bool = True
     is_admin: bool = False
 

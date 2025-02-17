@@ -37,7 +37,6 @@ class TaskUpdate(BaseSchema):
     due_date: Optional[datetime] = None
     status_id: Optional[int] = None
     priority_id: Optional[int] = None
-    tag_id: Optional[int] = None
     assigned_id: Optional[List[int]] = None
 
 

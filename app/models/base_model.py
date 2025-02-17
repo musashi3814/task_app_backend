@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Column, DateTime, String, event, text
+from sqlalchemy import Column, DateTime, Integer, event, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import (
     DeclarativeBase,
@@ -15,16 +15,19 @@ Base = declarative_base()
 
 class CommonColumns:
     created_at = Column(
-        DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP")
+        DateTime,
+        nullable=False,
+        default=datetime.now(),
     )
     updated_at = Column(
         DateTime,
-        nullable=True,
-        server_default=text("CURRENT_TIMESTAMP"),
+        nullable=False,
+        default=datetime.now(),
+        onupdate=datetime.now(),
     )
     deleted_at = Column(DateTime, nullable=True)
-    created_by = Column(String, nullable=True)
-    updated_by = Column(String, nullable=True)
+    created_by = Column(Integer, nullable=True)
+    updated_by = Column(Integer, nullable=True)
 
 
 # soft_delete用のコード(なぜか動作しない)

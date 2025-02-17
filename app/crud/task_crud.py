@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Any, List
 
+from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session, joinedload
 
@@ -12,12 +13,44 @@ from app.models.tasks_model import (
     Task_Tags,
     Tasks,
 )
+from app.models.users_model import Users
 from app.schemas.task import InfoTask, SummaryTask, Task_Tag, TaskCreate, TaskUpdate
-from app.schemas.user import Abst_User
 
 
 class Crud_Task:
+
+    def _validate_task_input(
+        self, db: Session, obj_in: TaskCreate | TaskUpdate
+    ) -> None:
+        if obj_in.status_id and obj_in.priority_id:
+            if not (0 <= obj_in.status_id <= 2) or not (0 <= obj_in.priority_id <= 2):
+                raise HTTPException(
+                    status_code=400,
+                    detail="status_idとpriority_idは0~2の範囲で指定してください",
+                )
+        if obj_in.assigned_id:
+            if not isinstance(obj_in.assigned_id, list):
+                raise HTTPException(
+                    status_code=400, detail="assigned_idはリストで指定してください"
+                )
+            if not all(isinstance(uid, int) for uid in obj_in.assigned_id):
+                raise HTTPException(
+                    status_code=400, detail="リスト内の値は全てint型で指定してください"
+                )
+            if len(obj_in.assigned_id) != len(set(obj_in.assigned_id)):
+                raise HTTPException(
+                    status_code=400, detail="assigned_idに重複があります"
+                )
+            for uid in obj_in.assigned_id:
+                if not db.query(Users).filter(Users.id == uid).first():
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"指定されたIDのユーザーが存在しません: {uid}",
+                    )
+
     def create(self, db: Session, *, obj_in: TaskCreate, user_id: int) -> InfoTask:
+        self._validate_task_input(db, obj_in)
+
         db_task_obj = Tasks(
             title=obj_in.title,
             description=obj_in.description,
@@ -71,29 +104,36 @@ class Crud_Task:
                 joinedload(Tasks.priority),
                 joinedload(Tasks.assign),
             )
+            .order_by(Tasks.created_at.desc())
+            .offset(skip)
+            .limit(limit)
         )
 
         if user_type == "user":
             query = query.filter(Task_Assign.user_id == user_id)  # only user
 
-        tasks = query.order_by(Tasks.created_at.desc()).offset(skip).limit(limit).all()
+        tasks = query.all()
 
-        if tasks:
-            response = [
-                SummaryTask(
-                    id=task.id,
-                    title=task.title,
-                    due_date=task.due_date,
-                    status_id=task.status_id,
-                    status=task.status.name,
-                    priority_id=task.priority_id,
-                    priority=task.priority.name,
-                )
-                for task in tasks
-            ]
+        if not tasks:
+            raise HTTPException(status_code=404, detail="タスクが存在しません")
+
+        response = [
+            SummaryTask(
+                id=task.id,
+                title=task.title,
+                due_date=task.due_date,
+                status_id=task.status_id,
+                status=task.status.name,
+                priority_id=task.priority_id,
+                priority=task.priority.name,
+            )
+            for task in tasks
+        ]
         return response
 
-    def get(self, db: Session, id: int, user_id: int) -> InfoTask:
+    def get(
+        self, db: Session, id: int, user_id: int, user_type: str = "user"
+    ) -> InfoTask:
         task = (
             db.query(Tasks)
             .options(
@@ -104,37 +144,55 @@ class Crud_Task:
             .filter(Tasks.id == id)
             .first()
         )
-        if task:
-            response = InfoTask(
-                id=task.id,
-                title=task.title,
-                description=task.description,
-                due_date=task.due_date,
-                status_id=task.status_id,
-                status=task.status.name,
-                priority_id=task.priority_id,
-                priority=task.priority.name,
-                assigned=[assign.user_id for assign in task.assign],
-                created_at=task.created_at,
-                created_by=task.created_by,
+        if not task:
+            raise HTTPException(
+                status_code=404, detail="指定されたIDのタスクが存在しません"
             )
+        if task.assign and user_id not in [assign.user_id for assign in task.assign]:
+            if user_type == "user":
+                raise HTTPException(
+                    status_code=400,
+                    detail="指定されたIDのタスクにアクセス権限がありません",
+                )
+
+        response = InfoTask(
+            id=task.id,
+            title=task.title,
+            description=task.description,
+            due_date=task.due_date,
+            status_id=task.status_id,
+            status=task.status.name,
+            priority_id=task.priority_id,
+            priority=task.priority.name,
+            assigned=[assign.user_id for assign in task.assign],
+            created_at=task.created_at,
+            created_by=task.created_by,
+        )
         return response
 
-    def update(self, db: Session, id: int, obj_in: TaskUpdate) -> InfoTask:
+    def update(
+        self, db: Session, id: int, obj_in: TaskUpdate, user_id: int
+    ) -> InfoTask:
+        self._validate_task_input(db, obj_in)
+
         loads = [joinedload(Tasks.status), joinedload(Tasks.priority)]
 
         db_obj = db.query(Tasks).filter(Tasks.id == id).options(*loads).first()
+        if not db_obj:
+            raise HTTPException(
+                status_code=404, detail="指定されたIDのタスクが存在しません"
+            )
 
         update_data = obj_in.dict(exclude_unset=True)
 
-        if "assigned_id" in update_data:
-            db.query(Task_Assign).filter(Task_Assign.task_id == id).delete()
-            db.bulk_save_objects(
-                [
-                    Task_Assign(task_id=id, user_id=user_id)
-                    for user_id in obj_in.assigned_id or []
-                ]
-            )
+        db.query(Task_Assign).filter(Task_Assign.task_id == id).delete()
+        db.bulk_save_objects(
+            [
+                Task_Assign(task_id=id, user_id=user_id)
+                for user_id in obj_in.assigned_id or []
+            ]
+        )
+        db_obj.updated_by = user_id
 
         for field, value in update_data.items():
             if field != "assigned_id":
@@ -159,9 +217,22 @@ class Crud_Task:
             created_by=db_obj.created_by,
         )
 
-    def delete(self, db: Session, *, id: int) -> None:
+    def delete(self, db: Session, *, id: int, user_id: int) -> None:
 
         task = db.query(Tasks).filter(Tasks.id == id).first()
+
+        if not task:
+            raise HTTPException(
+                status_code=404, detail="指定されたIDのタスクが存在しません"
+            )
+        if (
+            user_id not in [assign.user_id for assign in task.assign]
+            or not task.created_by == user_id
+        ):
+            raise HTTPException(
+                status_code=400, detail="指定されたIDのタスクにアクセス権限がありません"
+            )
+
         db.query(Task_Assign).filter(Task_Assign.task_id == id).delete()
 
         db.delete(task)

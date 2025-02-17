@@ -1,15 +1,13 @@
 from datetime import timedelta
 from typing import Annotated
 
-import jwt
 from fastapi import APIRouter, HTTPException
 
 from app.api.deps import RequestFormDep, SessionDep, decode_refresh_token
 from app.core import security
-from app.core.config import settings
 from app.crud.user_crud import crud_user
 from app.schemas.token import Token
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserCreateMe
 
 router = APIRouter()
 
@@ -52,8 +50,13 @@ def refresh_access_token(refresh_token: str) -> Token:
 
 
 @router.post("/signup", response_model=Token)
-def signup(session: SessionDep, user_in: UserCreate) -> Token:
-    user = crud_user.create(db=session, obj_in=user_in)
+def signup(session: SessionDep, user_in: UserCreateMe) -> Token:
+    obj_in = UserCreate(
+        is_active=True,
+        is_admin=False,
+        **user_in.dict(),
+    )
+    user = crud_user.create(db=session, obj_in=obj_in, user_id=None)
     role = "admin" if user.is_admin else "user"
 
     return Token(
