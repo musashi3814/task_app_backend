@@ -53,8 +53,13 @@ def update_task(
     session: SessionDep,
     current_user: CurrentUser,
 ) -> InfoTask:
+    user_type = "admin" if current_user.is_admin else "user"
     return crud_task.update(
-        db=session, id=task_id, obj_in=task, user_id=current_user.id
+        db=session,
+        id=task_id,
+        obj_in=task,
+        user_id=current_user.id,
+        user_type=user_type,
     )
 
 
@@ -66,4 +71,7 @@ def delete_task(
     session: SessionDep,
     current_user: CurrentUser,
 ) -> None:
-    return crud_task.delete(db=session, id=task_id, user_id=current_user.id)
+    user_type = "admin" if current_user.is_admin else "user"
+    return crud_task.delete(
+        db=session, id=task_id, user_id=current_user.id, user_type=user_type
+    )

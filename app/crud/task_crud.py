@@ -45,6 +45,27 @@ class Crud_Task:
                         detail=f"指定されたIDのユーザーが存在しません: {uid}",
                     )
 
+    def _authorize_task_access(
+        self, db: Session, task_id: int, user_id: int, user_type: str
+    ) -> None:
+        task = (
+            db.query(Tasks)
+            .options(joinedload(Tasks.assign))
+            .filter(Tasks.id == task_id)
+            .first()
+        )
+        if not task:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="指定されたIDのタスクが存在しません",
+            )
+        if task.assign and user_id not in [assign.user_id for assign in task.assign]:
+            if user_type == "user":
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="指定されたIDのタスクにアクセス権限がありません",
+                )
+
     def create(self, db: Session, *, obj_in: TaskCreate, user_id: int) -> InfoTask:
         self._validate_task_input(db, obj_in)
 
@@ -102,14 +123,12 @@ class Crud_Task:
                 joinedload(Tasks.assign),
             )
             .order_by(Tasks.created_at.desc())
-            .offset(skip)
-            .limit(limit)
         )
 
         if user_type == "user":
-            query = query.filter(Task_Assign.user_id == user_id)  # only user
+            query = query.filter(Task_Assign.user_id == user_id).limit(limit)
 
-        tasks = query.all()
+        tasks = query.offset(skip).limit(limit).all()
 
         if not tasks:
             raise HTTPException(
@@ -143,17 +162,7 @@ class Crud_Task:
             .filter(Tasks.id == id)
             .first()
         )
-        if not task:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="指定されたIDのタスクが存在しません",
-            )
-        if task.assign and user_id not in [assign.user_id for assign in task.assign]:
-            if user_type == "user":
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="指定されたIDのタスクにアクセス権限がありません",
-                )
+        self._authorize_task_access(db, id, user_id, user_type)
 
         response = InfoTask(
             id=task.id,
@@ -171,28 +180,25 @@ class Crud_Task:
         return response
 
     def update(
-        self, db: Session, id: int, obj_in: TaskUpdate, user_id: int
+        self, db: Session, id: int, obj_in: TaskUpdate, user_id: int, user_type: str
     ) -> InfoTask:
         self._validate_task_input(db, obj_in)
 
         loads = [joinedload(Tasks.status), joinedload(Tasks.priority)]
 
         db_obj = db.query(Tasks).filter(Tasks.id == id).options(*loads).first()
-        if not db_obj:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="指定されたIDのタスクが存在しません",
-            )
+        self._authorize_task_access(db, id, user_id, user_type)
 
         update_data = obj_in.dict(exclude_unset=True)
 
-        db.query(Task_Assign).filter(Task_Assign.task_id == id).delete()
-        db.bulk_save_objects(
-            [
-                Task_Assign(task_id=id, user_id=user_id)
-                for user_id in obj_in.assigned_id or []
-            ]
-        )
+        if "assigned_id" in update_data:
+            db.query(Task_Assign).filter(Task_Assign.task_id == id).delete()
+            db.bulk_save_objects(
+                [
+                    Task_Assign(task_id=id, user_id=user_id)
+                    for user_id in obj_in.assigned_id or []
+                ]
+            )
         db_obj.updated_by = user_id
 
         for field, value in update_data.items():
@@ -218,27 +224,12 @@ class Crud_Task:
             created_by=db_obj.created_by,
         )
 
-    def delete(self, db: Session, *, id: int, user_id: int) -> None:
+    def delete(self, db: Session, *, id: int, user_id: int, user_type: str) -> None:
 
-        task = db.query(Tasks).filter(Tasks.id == id).first()
-
-        if not task:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="指定されたIDのタスクが存在しません",
-            )
-        if (
-            user_id not in [assign.user_id for assign in task.assign]
-            or not task.created_by == user_id
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="指定されたIDのタスクにアクセス権限がありません",
-            )
+        self._authorize_task_access(db, id, user_id, user_type)
 
         db.query(Task_Assign).filter(Task_Assign.task_id == id).delete()
-
-        db.delete(task)
+        db.query(Tasks).filter(Tasks.id == id).delete()
         db.commit()
 
 

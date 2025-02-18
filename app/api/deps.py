@@ -29,7 +29,6 @@ TokenDep = Annotated[str, Depends(reusable_oauth2)]
 
 
 def decode_token(token: str) -> AccessTokenPayload:
-    print(token)
     try:
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]
@@ -74,9 +73,13 @@ def get_current_user(session: SessionDep, token: TokenDep) -> AccessTokenPayload
     token_data = decode_token(token)
     user = crud_user.get(db=session, id=token_data.sub)
     if not user:
-        raise HTTPException(status_code=404, detail="ユーザーが見つかりません")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="ユーザーが見つかりません"
+        )
     if not user.is_active:
-        raise HTTPException(status_code=401, detail="ログイン権限がありません")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="ログイン権限がありません"
+        )
     return user
 
 
@@ -85,7 +88,9 @@ CurrentUser = Annotated[Users, Depends(get_current_user)]
 
 def get_current_active_admin(current_user: CurrentUser) -> Users:
     if not current_user.is_admin:
-        raise HTTPException(status_code=403, detail="権限がありません")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="権限がありません"
+        )
     return current_user
 
 

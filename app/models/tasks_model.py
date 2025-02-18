@@ -14,7 +14,6 @@ class Tasks(Base, CommonColumns):
     title = Column(String, index=True, nullable=False)
     description = Column(String, nullable=True)
     status_id = Column(Integer, ForeignKey("task_status.id"), nullable=False)
-    tag_id = Column(Integer, ForeignKey("tags.id"), nullable=True)
     due_date = Column(DateTime, nullable=True)
     priority_id = Column(Integer, ForeignKey("priority.id"), nullable=False)
 
