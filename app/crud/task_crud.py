@@ -1,20 +1,14 @@
 from datetime import datetime
 from typing import Any, List
 
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session, joinedload
 
 from app.crud.base_crud import CRUDBase
-from app.models.tasks_model import (
-    Task_Assign,
-    Task_Priority,
-    Task_Status,
-    Task_Tags,
-    Tasks,
-)
+from app.models.tasks_model import Task_Assign, Tasks
 from app.models.users_model import Users
-from app.schemas.task import InfoTask, SummaryTask, Task_Tag, TaskCreate, TaskUpdate
+from app.schemas.task import InfoTask, SummaryTask, TaskCreate, TaskUpdate
 
 
 class Crud_Task:
@@ -25,26 +19,29 @@ class Crud_Task:
         if obj_in.status_id and obj_in.priority_id:
             if not (0 <= obj_in.status_id <= 2) or not (0 <= obj_in.priority_id <= 2):
                 raise HTTPException(
-                    status_code=400,
+                    status_code=status.HTTP_400_BAD_REQUEST,
                     detail="status_idとpriority_idは0~2の範囲で指定してください",
                 )
         if obj_in.assigned_id:
             if not isinstance(obj_in.assigned_id, list):
                 raise HTTPException(
-                    status_code=400, detail="assigned_idはリストで指定してください"
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="assigned_idはリストで指定してください",
                 )
             if not all(isinstance(uid, int) for uid in obj_in.assigned_id):
                 raise HTTPException(
-                    status_code=400, detail="リスト内の値は全てint型で指定してください"
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="リスト内の値は全てint型で指定してください",
                 )
             if len(obj_in.assigned_id) != len(set(obj_in.assigned_id)):
                 raise HTTPException(
-                    status_code=400, detail="assigned_idに重複があります"
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="assigned_idに重複があります",
                 )
             for uid in obj_in.assigned_id:
                 if not db.query(Users).filter(Users.id == uid).first():
                     raise HTTPException(
-                        status_code=400,
+                        status_code=status.HTTP_404_NOT_FOUND,
                         detail=f"指定されたIDのユーザーが存在しません: {uid}",
                     )
 
@@ -115,7 +112,9 @@ class Crud_Task:
         tasks = query.all()
 
         if not tasks:
-            raise HTTPException(status_code=404, detail="タスクが存在しません")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="タスクが存在しません"
+            )
 
         response = [
             SummaryTask(
@@ -146,12 +145,13 @@ class Crud_Task:
         )
         if not task:
             raise HTTPException(
-                status_code=404, detail="指定されたIDのタスクが存在しません"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="指定されたIDのタスクが存在しません",
             )
         if task.assign and user_id not in [assign.user_id for assign in task.assign]:
             if user_type == "user":
                 raise HTTPException(
-                    status_code=400,
+                    status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="指定されたIDのタスクにアクセス権限がありません",
                 )
 
@@ -180,7 +180,8 @@ class Crud_Task:
         db_obj = db.query(Tasks).filter(Tasks.id == id).options(*loads).first()
         if not db_obj:
             raise HTTPException(
-                status_code=404, detail="指定されたIDのタスクが存在しません"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="指定されたIDのタスクが存在しません",
             )
 
         update_data = obj_in.dict(exclude_unset=True)
@@ -223,14 +224,16 @@ class Crud_Task:
 
         if not task:
             raise HTTPException(
-                status_code=404, detail="指定されたIDのタスクが存在しません"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="指定されたIDのタスクが存在しません",
             )
         if (
             user_id not in [assign.user_id for assign in task.assign]
             or not task.created_by == user_id
         ):
             raise HTTPException(
-                status_code=400, detail="指定されたIDのタスクにアクセス権限がありません"
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="指定されたIDのタスクにアクセス権限がありません",
             )
 
         db.query(Task_Assign).filter(Task_Assign.task_id == id).delete()

@@ -1,19 +1,13 @@
 from typing import List, Optional
 
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.security import get_password_hash, verify_password
 from app.crud.base_crud import CRUDBase
-from app.models.tasks_model import (
-    Task_Assign,
-    Task_Priority,
-    Task_Status,
-    Task_Tags,
-    Tasks,
-)
+from app.models.tasks_model import Task_Assign, Tasks
 from app.models.users_model import Users
-from app.schemas.user import InfoUser, SummaryUser, UserCreate, UserUpdate, UserUpdateMe
+from app.schemas.user import InfoUser, UserCreate, UserUpdate, UserUpdateMe
 
 
 class CRUDUser:
@@ -25,7 +19,8 @@ class CRUDUser:
         user: Users = db.query(Users).filter(Users.id == id).first()
         if user is None:
             raise HTTPException(
-                status_code=404, detail="対象のユーザーが見つかりません"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="対象のユーザーが見つかりません",
             )
         return user
 
@@ -78,7 +73,10 @@ class CRUDUser:
     ) -> Users:
         db_obj = self.get_by_id(db, id=id)
         if db_obj.is_admin:
-            raise HTTPException(status_code=400, detail="更新する権限がありません")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="更新する権限がありません",
+            )
 
         update_data = obj_in.model_dump(exclude_unset=True)
         for field in update_data:

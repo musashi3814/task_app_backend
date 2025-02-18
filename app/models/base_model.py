@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Column, DateTime, Integer, event, text
+from sqlalchemy import Column, DateTime, Integer, event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import (
     DeclarativeBase,

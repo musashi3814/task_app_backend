@@ -50,23 +50,3 @@ class Task_Priority(BaseSchema):
     id: int
     name: str
     color: str
-
-
-class Task_Tag(BaseSchema):
-    id: int
-    name: str
-    color: str
-
-
-class Task_Status_Update(BaseSchema):
-    color: Optional[str]
-
-
-class Task_Tag_Create(BaseSchema):
-    name: str
-    color: str
-
-
-class Task_Tag_Update(BaseSchema):
-    name: Optional[str] = None
-    color: Optional[str] = None
